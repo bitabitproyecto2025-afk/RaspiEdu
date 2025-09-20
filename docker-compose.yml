@@ -1,0 +1,41 @@
+version: "3.9"
+services:
+app:
+build: ./backend
+env_file: .env
+command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+volumes:
+- app-data:/data
+- ./backend/app:/code/app
+- ./content:/content:ro
+expose: ["8000"]
+depends_on: [kiwix, kolibri]
+
+
+nginx:
+image: nginx:stable
+volumes:
+- ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+ports:
+- "80:80"
+depends_on: [app]
+
+
+kiwix:
+image: kiwix/kiwix-serve:latest
+command: ["*.zim", "--port=8083"]
+volumes:
+- ./content/zim:/data:ro
+expose: ["8083"]
+
+
+kolibri:
+image: learningequality/kolibri:stable
+volumes:
+- kolibri-data:/root/.kolibri
+expose: ["8080"]
+
+
+volumes:
+app-data:
+kolibri-data:
