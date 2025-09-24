@@ -1,0 +1,19 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grados</title><link rel="stylesheet" href="/static/site/css/style.css">
+</head><body>
+<header class="header"><div class="topbar"><a class="btn" href="/static/site/index.html">← Inicio</a><strong>Grados</strong></div></header>
+<div class="container">
+  <div class="grid" id="grades"></div>
+</div>
+<script>
+const cont=document.getElementById('grades');
+for(let g=1; g<=7; g++){
+  const d=document.createElement('div'); d.className='card';
+  d.innerHTML=`<h3>${g}.º de Básica</h3>
+  <p>Materiales por grado.</p>
+  <p><a class="btn" href="/static/site/contenido.html?grado=${g}">Ver contenido</a></p>`;
+  cont.appendChild(d);
+}
+</script>
+</body></html>

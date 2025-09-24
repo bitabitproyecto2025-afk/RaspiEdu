@@ -1,0 +1,30 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contenido por grado</title><link rel="stylesheet" href="/static/site/css/style.css">
+</head><body>
+<header class="header"><div class="topbar">
+  <a class="btn" href="/static/site/index.html">← Inicio</a><strong>Contenido</strong>
+</div></header>
+<div class="container">
+  <div class="card"><div id="title"></div><p class="muted">Coloca archivos en <code>/static/site/videos</code>, <code>/static/site/pdf</code> o <code>/static/site/html5</code> y registra en <code>/static/site/resources.json</code>.</p></div>
+  <div id="wrap"></div>
+</div>
+<script>
+const q=new URLSearchParams(location.search); const grado=q.get('grado')||'1';
+document.getElementById('title').innerHTML = `<h2>${grado}.º de Básica</h2>`;
+fetch('/static/site/resources.json').then(r=>r.json()).then(j=>{
+  const data=j[grado]||{videos:[],pdfs:[],html5:[]};
+  const W=document.getElementById('wrap'); W.innerHTML='';
+  const mk=(title,items,render)=>{ if(!items.length) return;
+    const s=document.createElement('section'); s.className='card';
+    s.innerHTML=`<h3>${title}</h3><div class="grid"></div>`;
+    items.forEach(it=>{ const c=document.createElement('div'); c.className='card';
+      c.innerHTML=render(it); s.querySelector('.grid').appendChild(c); });
+    W.appendChild(s);
+  };
+  mk('Videos', data.videos, it=>`<strong>${it.title||'Video'}</strong><video src="${it.src}" controls preload="metadata" style="width:100%;border-radius:8px"></video>`);
+  mk('PDFs', data.pdfs, it=>`<strong>${it.title||'PDF'}</strong><p><a class="btn" href="${it.href}" target="_blank">Abrir PDF</a></p>`);
+  mk('Actividades HTML5', data.html5, it=>`<strong>${it.title||'Actividad'}</strong><p><a class="btn" href="${it.href}" target="_blank">Abrir</a></p>`);
+}).catch(()=>{ document.getElementById('wrap').innerHTML='<div class="card">No se encontró resources.json</div>'; });
+</script>
+</body></html>

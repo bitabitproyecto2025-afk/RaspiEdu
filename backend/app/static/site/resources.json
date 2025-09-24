@@ -1,0 +1,19 @@
+{
+  "1": {
+    "videos": [
+      {"title":"Sumas básicas","src":"/static/site/videos/sumas1.mp4"}
+    ],
+    "pdfs": [
+      {"title":"Abecedario","href":"/static/site/pdf/abecedario.pdf"}
+    ],
+    "html5": [
+      {"title":"Juego de pareo","href":"/static/site/html5/pareo/index.html"}
+    ]
+  },
+  "2": {"videos":[], "pdfs":[], "html5":[]},
+  "3": {"videos":[], "pdfs":[], "html5":[]},
+  "4": {"videos":[], "pdfs":[], "html5":[]},
+  "5": {"videos":[], "pdfs":[], "html5":[]},
+  "6": {"videos":[], "pdfs":[], "html5":[]},
+  "7": {"videos":[], "pdfs":[], "html5":[]}
+}
