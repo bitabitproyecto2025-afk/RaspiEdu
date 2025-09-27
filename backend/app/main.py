@@ -1,62 +1,42 @@
-from fastapi import FastAPI, Request, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from pathlib import Path
+from fastapi import FastAPI
+from fastapi import Request, Response
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
-from app.routers import users, classes, content
 from app import models
 from app.seed import ensure_admin
-from app.deps import get_current_user
+from app.routers import users, classes, content  # agrega otros routers si existen
 
-app = FastAPI(title="RaspiEdu")
+app = FastAPI(title="RaspiEdu API", docs_url="/docs", redoc_url=None)
 
-app.include_router(users.router, prefix="/users", tags=["users"])
-app.include_router(classes.router, prefix="/classes", tags=["classes"])
-app.include_router(content.router, prefix="/content", tags=["content"])
+@app.api_route("/ui", methods=["GET","HEAD"], include_in_schema=False)
+def ui_entry(req: Request):
+    if req.method == "HEAD":
+        return Response(status_code=200)
+    return RedirectResponse("/static/ui/index.html", status_code=302)
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/content/files", StaticFiles(directory="/data/content"), name="content_files")
 
-@app.get("/", include_in_schema=False)
-def landing_get():
-    p = Path("app/static/site/index.html")
-    return FileResponse(p) if p.exists() else Response(status_code=404)
-
-@app.head("/", include_in_schema=False)
-def landing_head():
-    return Response(status_code=200)
+# Static dir absoluto
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.on_event("startup")
 def on_startup():
     models.init_db()
     ensure_admin()
 
-@app.get("/", response_class=HTMLResponse)
-async def root(request: Request, user=Depends(get_current_user)):
-    # Redirige según rol
-    if user.role == "admin":
-        return RedirectResponse(url="/content/admin", status_code=302)
-    if user.role == "docente":
-        return RedirectResponse(url="/content/docente", status_code=302)
-    return RedirectResponse(url="/content/estudiante", status_code=302)
-
-# --- Placeholders para evitar 404 mientras no haya UI ---
-@app.get("/content/admin", response_class=HTMLResponse)
-async def admin_dashboard(user=Depends(get_current_user)):
-    return HTMLResponse("<h1>Panel Admin</h1>")
-
-@app.get("/content/docente", response_class=HTMLResponse)
-async def docente_dashboard(user=Depends(get_current_user)):
-    return HTMLResponse("<h1>Panel Docente</h1>")
-
-@app.get("/content/estudiante", response_class=HTMLResponse)
-async def estudiante_dashboard(user=Depends(get_current_user)):
-    return HTMLResponse("<h1>Panel Estudiante</h1>")
-
-@app.get("/ui", include_in_schema=False)
-def ui():
-    return FileResponse(Path("app/static/ui/index.html"))
-
 @app.get("/health")
 def health():
     return {"ok": True}
+
+# Landing sin auth
+@app.get("/", include_in_schema=False)
+def landing():
+    return RedirectResponse(url="/static/site/index.html")
+
+# Routers (sin prefix interno en cada archivo)
+app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(classes.router, prefix="/classes", tags=["classes"])
+app.include_router(content.router, prefix="/content", tags=["content"])

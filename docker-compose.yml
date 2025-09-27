@@ -1,41 +1,54 @@
-version: "3.9"
 services:
-app:
-build: ./backend
-env_file: .env
-command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+  app:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
+    env_file: [.env]
+    volumes:
+      - app-data:/data
+      - ./backend/app:/code/app
+      - ./content/grades:/code/app/static/grades:ro
+      - ./content:/data/content
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+
+  kolibri:
+    build: ./kolibri
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      - KOLIBRI_HOME=/home/kolibri/.kolibri
+
+  kiwix:
+    image: ghcr.io/kiwix/kiwix-serve:3.7.0
+    command: ["--urlRootLocation=/kiwix", "/data/wikipedia_es_all_nopic_2025-08.zim"]
+    volumes:
+      - ./content/zim:/data:ro
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:stable
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+      - kolibri
+      - kiwix
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+
+  samba:
+    image: ghcr.io/crazy-max/samba:latest
+    network_mode: host
+    volumes:
+      - ./content/grades:/srv/grades
+      - ./samba/smb.conf:/etc/samba/smb.conf:ro
+    restart: unless-stopped
+
 volumes:
-- app-data:/data
-- ./backend/app:/code/app
-- ./content:/content:ro
-expose: ["8000"]
-depends_on: [kiwix, kolibri]
-
-
-nginx:
-image: nginx:stable
-volumes:
-- ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-ports:
-- "80:80"
-depends_on: [app]
-
-
-kiwix:
-image: kiwix/kiwix-serve:latest
-command: ["*.zim", "--port=8083"]
-volumes:
-- ./content/zim:/data:ro
-expose: ["8083"]
-
-
-kolibri:
-image: learningequality/kolibri:stable
-volumes:
-- kolibri-data:/root/.kolibri
-expose: ["8080"]
-
-
-volumes:
-app-data:
-kolibri-data:
+  app-data:
+  kolibri-data:

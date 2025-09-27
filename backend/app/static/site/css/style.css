@@ -16,3 +16,9 @@ a{color:var(--prim);text-decoration:none} a:hover{text-decoration:underline}
 .iframe-wrap iframe{width:100%;height:100%;border:0}
 .footer{padding:12px;color:#fff;background:#0b3a70;text-align:center}
 .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#1e40af;font-size:12px}
+.list{display:block;margin:0;padding:0}
+.item{list-style:none;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin:8px 0;
+      display:flex;gap:12px;align-items:center;justify-content:space-between}
+.item .name{font-weight:600;overflow-wrap:anywhere}
+.item .meta{color:#6b7280;font-size:12px;margin-left:8px}
+.item .actions .btn{margin-left:8px}

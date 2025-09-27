@@ -4,7 +4,8 @@
       {"title":"Sumas básicas","src":"/static/site/videos/sumas1.mp4"}
     ],
     "pdfs": [
-      {"title":"Abecedario","href":"/static/site/pdf/abecedario.pdf"}
+      {"title":"Comprensión y Expresión Oral y Escrita","href":"/static/site/pdf/1roEGBCOMPRENSION.pdf"},
+      {"title":"English","href":"/static/site/pdf/1stEGBENGLISH.pdf"}
     ],
     "html5": [
       {"title":"Juego de pareo","href":"/static/site/html5/pareo/index.html"}

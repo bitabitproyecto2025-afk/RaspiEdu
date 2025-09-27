@@ -1,30 +1,135 @@
-<!doctype html><html lang="es"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Contenido por grado</title><link rel="stylesheet" href="/static/site/css/style.css">
-</head><body>
-<header class="header"><div class="topbar">
-  <a class="btn" href="/static/site/index.html">← Inicio</a><strong>Contenido</strong>
-</div></header>
-<div class="container">
-  <div class="card"><div id="title"></div><p class="muted">Coloca archivos en <code>/static/site/videos</code>, <code>/static/site/pdf</code> o <code>/static/site/html5</code> y registra en <code>/static/site/resources.json</code>.</p></div>
-  <div id="wrap"></div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Contenido por grado</title>
+<style>
+  :root{--bg:#f7f7f7;--card:#fff;--br:#e6e6e6;--tx:#222;--mut:#666}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--tx)}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px 20px;background:#fff;border-bottom:1px solid var(--br)}
+  .left{display:flex;gap:12px;align-items:center}
+  .btn{display:inline-block;padding:8px 12px;border:1px solid var(--br);background:#fff;text-decoration:none;color:#111;border-radius:6px}
+  .wrap{max-width:1100px;margin:20px auto;padding:0 16px}
+  h1{font-size:18px;margin:0}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+  section{background:var(--card);border:1px solid var(--br);border-radius:10px;padding:16px}
+  section h2{font-size:16px;margin:0 0 12px 0;display:flex;align-items:center;gap:8px}
+  .count{font-size:12px;color:#333;background:#f0f0f0;border:1px solid var(--br);border-radius:999px;padding:2px 8px}
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f1f1}
+  li:last-child{border-bottom:none}
+  .title{flex:1;min-width:0;word-break:break-word}
+  .actions{flex:0 0 auto;display:flex;gap:8px;align-items:center}
+  .empty{color:var(--mut);padding:12px 0}
+  nav.quick{display:flex;gap:8px;flex-wrap:wrap}
+  nav.quick a{font-size:12px}
+  audio{height:28px}
+  footer{color:#888;font-size:12px;text-align:center;padding:16px}
+</style>
+</head>
+<body>
+<header>
+  <div class="left">
+    <a class="btn" href="/">← Volver al panel</a>
+    <h1>Recursos de <span id="gradoSel"></span>° de Básica</h1>
+  </div>
+  <nav class="quick">
+    <a class="btn" href="#pdf">PDF</a>
+    <a class="btn" href="#audio">Audio</a>
+    <a class="btn" href="#videos">Videos</a>
+    <a class="btn" href="#html5">HTML5</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <section id="pdf">
+      <h2>PDF <span class="count" id="cnt-pdf">0</span></h2>
+      <ul id="list-pdf"><li class="empty">Cargando…</li></ul>
+    </section>
+
+    <section id="audio">
+      <h2>Audio <span class="count" id="cnt-audio">0</span></h2>
+      <ul id="list-audio"><li class="empty">Cargando…</li></ul>
+    </section>
+
+    <section id="videos">
+      <h2>Videos <span class="count" id="cnt-videos">0</span></h2>
+      <ul id="list-videos"><li class="empty">Cargando…</li></ul>
+    </section>
+
+    <section id="html5">
+      <h2>HTML5 interactivo <span class="count" id="cnt-html5">0</span></h2>
+      <ul id="list-html5"><li class="empty">Cargando…</li></ul>
+    </section>
+  </div>
 </div>
+
+<footer>RaspiEdu</footer>
+
 <script>
-const q=new URLSearchParams(location.search); const grado=q.get('grado')||'1';
-document.getElementById('title').innerHTML = `<h2>${grado}.º de Básica</h2>`;
-fetch('/static/site/resources.json').then(r=>r.json()).then(j=>{
-  const data=j[grado]||{videos:[],pdfs:[],html5:[]};
-  const W=document.getElementById('wrap'); W.innerHTML='';
-  const mk=(title,items,render)=>{ if(!items.length) return;
-    const s=document.createElement('section'); s.className='card';
-    s.innerHTML=`<h3>${title}</h3><div class="grid"></div>`;
-    items.forEach(it=>{ const c=document.createElement('div'); c.className='card';
-      c.innerHTML=render(it); s.querySelector('.grid').appendChild(c); });
-    W.appendChild(s);
-  };
-  mk('Videos', data.videos, it=>`<strong>${it.title||'Video'}</strong><video src="${it.src}" controls preload="metadata" style="width:100%;border-radius:8px"></video>`);
-  mk('PDFs', data.pdfs, it=>`<strong>${it.title||'PDF'}</strong><p><a class="btn" href="${it.href}" target="_blank">Abrir PDF</a></p>`);
-  mk('Actividades HTML5', data.html5, it=>`<strong>${it.title||'Actividad'}</strong><p><a class="btn" href="${it.href}" target="_blank">Abrir</a></p>`);
-}).catch(()=>{ document.getElementById('wrap').innerHTML='<div class="card">No se encontró resources.json</div>'; });
+  function qp(k){return new URLSearchParams(location.search).get(k)}
+  const grado = parseInt(qp('grado')||'1',10);
+  document.getElementById('gradoSel').textContent = isFinite(grado) ? grado : '';
+
+  function mkItem(it){
+    const li = document.createElement('li');
+    const t = document.createElement('div'); t.className='title'; t.textContent = it.titulo || it.title || 'Recurso';
+    const act = document.createElement('div'); act.className='actions';
+
+    const tipo = String(it.tipo||it.type||'').toLowerCase();
+
+    if(tipo === 'audio'){
+      const player = document.createElement('audio');
+      player.controls = true;
+      player.preload = 'none';
+      player.src = it.url;
+      act.appendChild(player);
+    }
+
+    const a = document.createElement('a'); a.className='btn'; a.textContent='Abrir'; a.href = it.url; a.target='_blank'; a.rel='noopener';
+    act.appendChild(a);
+
+    li.appendChild(t); li.appendChild(act);
+    return li;
+  }
+
+  function fill(listId, countId, items){
+    const ul = document.getElementById(listId);
+    ul.innerHTML = '';
+    document.getElementById(countId).textContent = items.length;
+    if(items.length===0){ ul.innerHTML = '<li class="empty">Sin contenidos en esta sección.</li>'; return; }
+    items.sort((a,b)=>String(a.titulo||'').localeCompare(String(b.titulo||''),'es',{numeric:true,sensitivity:'base'}));
+    items.forEach(it=>ul.appendChild(mkItem(it)));
+  }
+
+  async function load(){
+    try{
+      const r = await fetch('/content/api?grado='+encodeURIComponent(grado));
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const data = await r.json();
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      const pdf = items.filter(x=>String(x.tipo||x.type).toLowerCase()==='pdf');
+      const aud = items.filter(x=>String(x.tipo||x.type).toLowerCase()==='audio');
+      const vid = items.filter(x=>String(x.tipo||x.type).toLowerCase()==='video');
+      const h5  = items.filter(x=>String(x.tipo||x.type).toLowerCase()==='html5');
+
+      fill('list-pdf','cnt-pdf',pdf);
+      fill('list-audio','cnt-audio',aud);
+      fill('list-videos','cnt-videos',vid);
+      fill('list-html5','cnt-html5',h5);
+    }catch(e){
+      ['list-pdf','list-audio','list-videos','list-html5'].forEach(id=>{
+        const ul=document.getElementById(id);
+        ul.innerHTML = `<li class="empty">Error cargando contenidos: ${e.message}</li>`;
+      });
+    }
+  }
+  load();
 </script>
-</body></html>
+</body>
+</html>

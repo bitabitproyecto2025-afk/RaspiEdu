@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RaspiEdu · Panel</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:0;background:#f6f7f9}
+  header{background:#111;color:#fff;padding:12px 16px;font-weight:700}
+  main{max-width:1080px;margin:16px auto;padding:0 12px}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin:12px 0}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  input,select,button{padding:8px;border:1px solid #cbd5e1;border-radius:8px}
+  button{cursor:pointer}
+  .btn{display:inline-block;background:#111;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none}
+  .muted{color:#6b7280;font-size:12px}
+  .ok{color:#15803d}.err{color:#b91c1c}
+  .hidden{display:none}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
+  th{background:#f3f4f6}
+  .tabs{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
+  .tab{padding:8px 10px;background:#e5e7eb;border-radius:20px;cursor:pointer}
+  .tab.active{background:#111;color:#fff}
+  .right{margin-left:auto}
+</style>
+</head>
+<body>
+<header>RaspiEdu · Panel</header>
+<div class="card"><a class="btn" href="/static/site/index.html">← Volver al Inicio</a></div>
+
+<main>
+  <!-- Login -->
+  <div class="card" id="loginCard">
+    <h3>Iniciar sesión</h3>
+    <div class="row">
+      <input id="email" type="email" placeholder="correo (p.ej. admin@escuela.local)" style="flex:1" />
+      <input id="password" type="password" placeholder="contraseña" style="flex:1" />
+      <button id="loginBtn">Entrar</button>
+    </div>
+    <div class="muted">Usa el admin del .env</div>
+    <div id="loginMsg" class="muted"></div>
+  </div>
+
+  <!-- Barra -->
+  <div id="bar" class="card hidden">
+    <div class="row" style="align-items:center;justify-content:space-between">
+      <div>
+        <span class="muted">Autenticado.</span>
+        <button id="logoutBtn">Salir</button>
+      </div>
+      <div class="tabs">
+        <div class="tab active" data-tab="grades">Grados</div>
+        <div class="tab" data-tab="subjects">Materias</div>
+        <div class="tab" data-tab="classrooms">Aulas</div>
+        <div class="tab" data-tab="users">Usuarios</div>
+        <div class="tab" data-tab="enroll">Matrícula</div>
+        <div class="tab" data-tab="assign">Docentes↔Aulas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grados -->
+  <div id="tab-grades" class="card hidden">
+    <h3>Grados y paralelos</h3>
+    <div class="row">
+      <label>Año lectivo</label>
+      <select id="schoolYear"></select>
+      <input id="grado" type="number" min="1" max="7" placeholder="Grado 1..7" />
+      <input id="paralelo" placeholder="Paralelo (A..Z)" />
+      <button id="addGradeBtn">Crear</button>
+      <span class="muted">Crear y borrar grados/paralelos por año lectivo.</span>
+    </div>
+    <div id="gradesMsg" class="muted"></div>
+    <table id="gradesTbl">
+      <thead><tr><th>ID</th><th>Grado</th><th>Paralelo</th><th>Año</th><th>Acciones</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Materias -->
+  <div id="tab-subjects" class="card hidden">
+    <h3>Materias</h3>
+    <div class="row">
+      <input id="materia" placeholder="Nombre (Matemática, Lengua...)" style="flex:1" />
+      <button id="addSubjectBtn">Crear</button>
+    </div>
+    <div id="subjectsMsg" class="muted"></div>
+    <table id="subjectsTbl"><thead><tr><th>ID</th><th>Nombre</th><th>Acciones</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <!-- Aulas -->
+  <div id="tab-classrooms" class="card hidden">
+    <h3>Aulas (Grado + Materia)</h3>
+    <div class="row">
+      <select id="gradeSel"></select>
+      <select id="subjSel"></select>
+      <button id="addClassroomBtn">Crear</button>
+    </div>
+    <div id="classroomsMsg" class="muted"></div>
+    <table id="classroomsTbl"><thead><tr><th>ID</th><th>Grado</th><th>Paralelo</th><th>Materia</th><th>Acciones</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <!-- Usuarios -->
+  <div id="tab-users" class="card hidden">
+    <h3>Usuarios</h3>
+    <div class="row">
+      <input id="uNombres" placeholder="Nombres" />
+      <input id="uApellidos" placeholder="Apellidos" />
+      <input id="uEmail" type="email" placeholder="correo" />
+      <select id="uRole">
+        <option value="docente">docente</option>
+        <option value="estudiante">estudiante</option>
+        <option value="admin">admin</option>
+      </select>
+      <input id="uPass" type="password" placeholder="contraseña" />
+      <button id="addUserBtn">Crear</button>
+    </div>
+    <div id="usersMsg" class="muted"></div>
+
+    <div class="row" style="align-items:center">
+      <label>Filtrar por rol</label>
+      <select id="filterRole">
+        <option value="">todos</option>
+        <option value="admin">admin</option>
+        <option value="docente">docente</option>
+        <option value="estudiante">estudiante</option>
+      </select>
+      <button id="reloadUsers">Refrescar</button>
+    </div>
+    <table id="usersTbl"><thead><tr><th>ID</th><th>Apellidos</th><th>Nombres</th><th>Rol</th><th>Email</th><th>Acciones</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <!-- Matrícula -->
+  <div id="tab-enroll" class="card hidden">
+    <h3>Matricular estudiante en un grado</h3>
+    <div class="row">
+      <select id="enrStudent"></select>
+      <select id="enrGrade"></select>
+      <button id="doEnroll">Matricular</button>
+      <button id="doUnenroll">Desmatricular</button>
+    </div>
+    <div class="muted">Cada estudiante pertenece a un único grado-paralelo por año lectivo.</div>
+  </div>
+
+  <!-- Asignación Docentes ↔ Aulas -->
+  <div id="tab-assign" class="card hidden">
+    <h3>Asignar/retirar docentes en aulas</h3>
+    <div class="row">
+      <select id="asgTeacher"></select>
+      <select id="asgClassroom"></select>
+      <button id="doAssign">Asignar</button>
+      <button id="doUnassign">Retirar</button>
+    </div>
+    <div class="muted">Un docente puede estar en múltiples aulas.</div>
+  </div>
+</main>
+
+<script>
+const BASE = location.origin.replace(/\/$/,'');
+const $ = sel => document.querySelector(sel);
+const msg = (id, txt, ok=false)=>{ const el=$(id); el.textContent=txt; el.className=(ok?'ok ':'err ')+'muted'; };
+const token = ()=> localStorage.getItem('jwt')||'';
+
+function show(id, yes){ const el=$(id); el.classList.toggle('hidden', !yes); }
+function setTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  show('#tab-grades', name==='grades');
+  show('#tab-subjects', name==='subjects');
+  show('#tab-classrooms', name==='classrooms');
+  show('#tab-users', name==='users');
+  show('#tab-enroll', name==='enroll');
+  show('#tab-assign', name==='assign');
+}
+
+async function api(path, opts={}){
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  if(token()) headers['Authorization']='Bearer '+token();
+  const res = await fetch(BASE+path, Object.assign({}, opts, {headers}));
+  if(!res.ok){
+    const text = await res.text().catch(()=>res.statusText);
+    throw new Error(res.status+' '+text);
+  }
+  const ct = res.headers.get('content-type')||'';
+  return ct.includes('application/json') ? res.json() : res.text();
+}
+
+// --- login ---
+$('#loginBtn').onclick = async ()=>{
+  const email=$('#email').value.trim(), password=$('#password').value;
+  try{
+    const data = await api('/users/login',{method:'POST', body:JSON.stringify({email,password})});
+    localStorage.setItem('jwt', data.access_token);
+    $('#loginMsg').textContent='';
+    show('#loginCard', false);
+    show('#bar', true);
+    setTab('grades');
+    refreshAll();
+  }catch(e){ msg('#loginMsg', e.message); }
+};
+$('#logoutBtn').onclick = ()=>{
+  localStorage.removeItem('jwt');
+  show('#bar', false);
+  ['#tab-grades','#tab-subjects','#tab-classrooms','#tab-users','#tab-enroll','#tab-assign'].forEach(id=>show(id,false));
+  show('#loginCard', true);
+};
+
+// --- tabs ---
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{ setTab(t.dataset.tab); refreshAll(); };
+});
+
+// --- helpers ---
+function populateYears(){
+  const yearSel = $('#schoolYear');
+  if(!yearSel) return;
+  const y0 = new Date().getFullYear();
+  yearSel.innerHTML='';
+  for(let y=y0; y<=2050; y++){
+    const o=document.createElement('option'); o.value=y; o.textContent=y; yearSel.appendChild(o);
+  }
+}
+function fillSelect(sel, rows, labelFn, valueFn='id'){
+  sel.innerHTML='';
+  rows.forEach(r=>{
+    const o=document.createElement('option');
+    o.value = typeof valueFn==='function' ? valueFn(r) : r[valueFn];
+    o.textContent = labelFn(r);
+    sel.appendChild(o);
+  });
+}
+
+// --- grades ---
+async function loadGrades(){
+  const rows = await api('/classes/grades');
+  const tb = $('#gradesTbl tbody'); tb.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.id}</td><td>${r.grado}</td><td>${r.paralelo}</td><td>${r.school_year??''}</td>
+      <td>
+        <button class="detG" data-id="${r.id}">Detalle</button>
+        <button class="delG" data-id="${r.id}">Borrar</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+  const gsel = $('#gradeSel'); if(gsel){ fillSelect(gsel, rows, r=>`${r.grado}${r.paralelo} (${r.school_year})`); }
+  const enrG = $('#enrGrade'); if(enrG){ fillSelect(enrG, rows, r=>`${r.grado}${r.paralelo} (${r.school_year})`); }
+}
+$('#gradesTbl').onclick = async (e)=>{
+  const id = e.target.dataset?.id;
+  if(!id) return;
+  if(e.target.classList.contains('delG')){
+    if(!confirm('¿Borrar grado? Se eliminarán aulas y matrículas relacionadas.')) return;
+    try{ await api(`/classes/grades/${id}`,{method:'DELETE'}); await loadGrades(); }catch(err){ alert(err.message); }
+  }
+  if(e.target.classList.contains('detG')){
+    try{ const d=await api(`/classes/grades/${id}/detail`); alert(JSON.stringify(d,null,2)); }catch(err){ alert(err.message); }
+  }
+};
+$('#addGradeBtn').onclick = async ()=>{
+  const grado = Number($('#grado').value);
+  const paralelo = ($('#paralelo').value||'').trim().toUpperCase();
+  const school_year = Number($('#schoolYear').value);
+  try{
+    await api('/classes/grades',{method:'POST',body:JSON.stringify({grado,paralelo,school_year})});
+    msg('#gradesMsg','Creado',true);
+    $('#grado').value=''; $('#paralelo').value='';
+    await loadGrades();
+  }catch(e){ msg('#gradesMsg', e.message); }
+};
+
+// --- subjects ---
+async function loadSubjects(){
+  const rows = await api('/classes/subjects');
+  const tb = $('#subjectsTbl tbody'); tb.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.id}</td><td>${r.nombre}</td><td><button class="delS" data-id="${r.id}">Borrar</button></td>`;
+    tb.appendChild(tr);
+  });
+  const ssel = $('#subjSel'); if(ssel){ fillSelect(ssel, rows, r=>r.nombre); }
+}
+$('#subjectsTbl').onclick = async (e)=>{
+  const id = e.target.dataset?.id;
+  if(e.target.classList.contains('delS')){
+    if(!confirm('¿Borrar materia?')) return;
+    try{ await api(`/classes/subjects/${id}`,{method:'DELETE'}); await loadSubjects(); }catch(err){ alert(err.message); }
+  }
+};
+$('#addSubjectBtn').onclick = async ()=>{
+  const nombre=$('#materia').value.trim();
+  try{ await api('/classes/subjects',{method:'POST',body:JSON.stringify({nombre})});
+       msg('#subjectsMsg','Creada',true); $('#materia').value=''; await loadSubjects();
+  }catch(e){ msg('#subjectsMsg', e.message); }
+};
+
+// --- classrooms ---
+async function loadClassrooms(){
+  const rows = await api('/classes/classrooms');
+  const tb = $('#classroomsTbl tbody'); tb.innerHTML='';
+  const grades = await api('/classes/grades');
+  const subs = await api('/classes/subjects');
+  const gmap = Object.fromEntries(grades.map(g=>[g.id,g]));
+  const smap = Object.fromEntries(subs.map(s=>[s.id,s]));
+  rows.forEach(r=>{
+    const g=gmap[r.grade_id]||{}, s=smap[r.subject_id]||{};
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.id}</td><td>${g.grado||''}</td><td>${g.paralelo||''}</td><td>${s.nombre||''}</td>
+      <td><button class="delC" data-id="${r.id}">Borrar</button></td>`;
+    tb.appendChild(tr);
+  });
+  const asgC = $('#asgClassroom'); if(asgC){ fillSelect(asgC, rows, r=>`Aula ${r.id} · Grado ${ (gmap[r.grade_id]||{}).grado || '' }${ (gmap[r.grade_id]||{}).paralelo || '' } · ${ (smap[r.subject_id]||{}).nombre || '' }`); }
+}
+$('#classroomsTbl').onclick = async (e)=>{
+  const id = e.target.dataset?.id;
+  if(e.target.classList.contains('delC')){
+    if(!confirm('¿Borrar aula?')) return;
+    try{ await api(`/classes/classrooms/${id}`,{method:'DELETE'}); await loadClassrooms(); }catch(err){ alert(err.message); }
+  }
+};
+$('#addClassroomBtn').onclick = async ()=>{
+  const grade_id=Number($('#gradeSel').value), subject_id=Number($('#subjSel').value);
+  try{ await api('/classes/classrooms',{method:'POST',body:JSON.stringify({grade_id,subject_id})});
+       msg('#classroomsMsg','Creada',true); await loadClassrooms();
+  }catch(e){ msg('#classroomsMsg', e.message); }
+};
+
+// --- users ---
+async function loadUsers(){
+  const role = $('#filterRole').value;
+  const rows = await api('/users'+(role?`?role=${encodeURIComponent(role)}`:''));
+  const tb = $('#usersTbl tbody'); tb.innerHTML='';
+  rows.forEach(u=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${u.id}</td><td>${u.apellidos||''}</td><td>${u.nombres||''}</td><td>${u.role}</td><td>${u.email}</td>
+      <td><button class="delU" data-id="${u.id}">Borrar</button></td>`;
+    tb.appendChild(tr);
+  });
+  const students = rows.filter(u=>u.role==='estudiante');
+  const teachers = rows.filter(u=>u.role==='docente' || u.role==='admin');
+  if($('#enrStudent')) fillSelect($('#enrStudent'), students, u=>`${u.apellidos} ${u.nombres} (${u.email})`);
+  if($('#asgTeacher')) fillSelect($('#asgTeacher'), teachers, u=>`${u.apellidos} ${u.nombres} (${u.email})`);
+}
+$('#usersTbl').onclick = async (e)=>{
+  const id = e.target.dataset?.id;
+  if(e.target.classList.contains('delU')){
+    if(!confirm('¿Borrar usuario?')) return;
+    try{ await api(`/users/${id}`,{method:'DELETE'}); await loadUsers(); }catch(err){ alert(err.message); }
+  }
+};
+$('#addUserBtn').onclick = async ()=>{
+  const payload={
+    nombres:$('#uNombres').value.trim(),
+    apellidos:$('#uApellidos').value.trim(),
+    email:$('#uEmail').value.trim(),
+    role:$('#uRole').value,
+    password:$('#uPass').value
+  };
+  try{ await api('/users/create',{method:'POST',body:JSON.stringify(payload)});
+       msg('#usersMsg','Usuario creado',true);
+       ['#uNombres','#uApellidos','#uEmail','#uPass'].forEach(id=>$(id).value='');
+       await loadUsers();
+  }catch(e){ msg('#usersMsg', e.message); }
+};
+$('#reloadUsers').onclick = loadUsers;
+
+// --- enrollment ---
+$('#doEnroll').onclick = async ()=>{
+  const uid = $('#enrStudent').value, gid = $('#enrGrade').value;
+  try{ await api(`/classes/grades/${gid}/enroll/${uid}`,{method:'POST'}); alert('Matriculado'); }
+  catch(e){ alert(e.message); }
+};
+$('#doUnenroll').onclick = async ()=>{
+  const uid = $('#enrStudent').value, gid = $('#enrGrade').value;
+  try{ await api(`/classes/grades/${gid}/enroll/${uid}`,{method:'DELETE'}); alert('Desmatriculado'); }
+  catch(e){ alert(e.message); }
+};
+
+// --- assign teachers ---
+$('#doAssign').onclick = async ()=>{
+  const tid = $('#asgTeacher').value, cid = $('#asgClassroom').value;
+  try{ await api(`/classes/classrooms/${cid}/teachers/${tid}`,{method:'POST'}); alert('Asignado'); }
+  catch(e){ alert(e.message); }
+};
+$('#doUnassign').onclick = async ()=>{
+  const tid = $('#asgTeacher').value, cid = $('#asgClassroom').value;
+  try{ await api(`/classes/classrooms/${cid}/teachers/${tid}`,{method:'DELETE'}); alert('Retirado'); }
+  catch(e){ alert(e.message); }
+};
+
+// --- init ---
+function refreshAll(){
+  if(!token()) return;
+  loadGrades(); loadSubjects(); loadClassrooms(); loadUsers();
+}
+populateYears();
+document.getElementById('filterRole').value='';
+if(token()){ show('#loginCard', false); show('#bar', true); setTab('grades'); refreshAll(); }
+</script>
+</body>
+</html>
